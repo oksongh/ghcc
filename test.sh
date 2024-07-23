@@ -19,6 +19,10 @@ assert(){
 assert 0 0
 assert 42 42
 
+echo === simlest eval ===
 assert 21 '5+20-4'
+
+echo === spaced eval ===
+assert 60 '52 + 30 - 22'
 
 echo OK
