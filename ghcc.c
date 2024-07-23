@@ -57,12 +57,12 @@ bool consume(char op) {
 
 void expect(char op) {
     if (!consume(op)) {
-        error("'%c'ではない", op);
+        error_at(token->str, "'%c'ではない", op);
     }
 }
 int expect_number() {
     if (token->kind != TK_NUM) {
-        error("数ではない");
+        error_at(token->str, "数ではない");
     }
     int val = token->val;
     token = token->next;
@@ -104,7 +104,7 @@ Token* tokenize(char* p) {
             continue;
         }
 
-        error("cannot tokeinze");
+        error_at(p, "cannot tokeinze");
     }
     new_token(TK_EOF, cur, p);
     return head.next;
@@ -116,9 +116,8 @@ int main(int argc, char** argv) {
         fprintf(stderr, "引数の個数が不一致");
         return 1;
     }
+    user_input = argv[1];
     token = tokenize(argv[1]);
-
-    char* p = argv[1];
 
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
