@@ -20,12 +20,26 @@ struct Token {
     char* str;  // トークン文字列
 };
 
-// 着目
+// 着目するトークン
 Token* token;
 
 void error(char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+char* user_input;
+void error_at(char* loc, char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", (int)(loc - user_input), " ");
+    fprintf(stderr, "^");
+
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
