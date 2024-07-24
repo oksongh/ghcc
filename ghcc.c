@@ -23,6 +23,28 @@ struct Token {
 // 着目するトークン
 Token* token;
 
+void eprint_token_list(Token* tok) {
+    for (Token* cur = tok; cur != NULL; cur = cur->next) {
+        char str[10];
+        switch (cur->kind) {
+            case TK_RESERVED:
+                sprintf(str, ":%c:", cur->str[0]);
+                break;
+            case TK_NUM:
+                sprintf(str, ":%d:", cur->val);
+                break;
+            case TK_EOF:
+                sprintf(str, ":%s:", "eof");
+                break;
+            default:
+                break;
+        }
+        fprintf(stderr, "%s", str);
+        fprintf(stderr, "->");
+    }
+    fprintf(stderr, "\n");
+}
+
 void error(char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
