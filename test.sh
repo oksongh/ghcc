@@ -32,6 +32,12 @@ assert 21 '5+20-4'
 
 echo === spaced eval ===
 assert 60 '52 + 30 - 22'
+assert 43 '5 + 3 * 12 + 2'
+
+echo === priority eval ===
+assert 47 '5+6*7'
+assert 77 '(5+6)*7'
+assert 19 '2*(5+3)+3'
 
 echo === compile error ===
 assert 1 '1 + a'
