@@ -110,6 +110,74 @@ Token* tokenize(char* p) {
     return head.next;
 }
 
+/*
+    抽象構文木
+ */
+typedef enum {
+    ND_ADD,
+    ND_SUB,
+    ND_MUL,
+    ND_DIV,
+    ND_NUM,
+} NodeKind;
+
+typedef struct Node Node;
+struct Node {
+    NodeKind kind;
+    Node* lhs;
+    Node* rhs;
+    int val;
+};
+
+Node* new_node(NodeKind kind, Node* lhs, Node* rhs) {
+    Node* node = calloc(1, sizeof(Node));
+    node->lhs = lhs;
+    node->rhs = rhs;
+    return node;
+}
+Node* new_node_num(int val) {
+    Node* node = new_node(ND_NUM, NULL, NULL);
+    node->val = val;
+    return node;
+}
+Node* expr();
+Node* mul();
+Node* primary();
+
+Node* expr() {
+    Node* node = mul();
+    while (true) {
+        if (consume('+')) {
+            node = new_node(ND_ADD, node, mul());
+        } else if (consume('-')) {
+            node = new_node(ND_SUB, node, mul());
+        } else {
+            return node;
+        }
+    }
+}
+
+Node* mul() {
+    Node* node = primary();
+    while (true) {
+        if (consume('*')) {
+            node = new_node(ND_MUL, node, mul());
+        } else if (consume('/')) {
+            node = new_node(ND_DIV, node, mul());
+        } else {
+            return node;
+        }
+    }
+}
+Node* primary() {
+    if (consume('(')) {
+        Node* node = expr();
+        expect(')');
+        return node;
+    }
+    return new_node_num(expect_number());
+}
+
 // 数値 (記号(+,-) 数値),...
 int main(int argc, char** argv) {
     if (argc != 2) {
