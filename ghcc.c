@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// #define DEBUG
+
 typedef enum {
     TK_RESERVED,  // 記号
     TK_NUM,       // 整数トークン
@@ -25,7 +27,7 @@ Token* token;
 
 void eprint_token_list(Token* tok) {
     for (Token* cur = tok; cur != NULL; cur = cur->next) {
-        char str[10];
+        char str[200];
         switch (cur->kind) {
             case TK_RESERVED:
                 sprintf(str, ":%c:", cur->str[0]);
@@ -115,7 +117,7 @@ Token* tokenize(char* p) {
             p++;
             continue;
         }
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/') {
+        if (strchr("+-*/()", *p)) {
             cur = new_token(TK_RESERVED, cur, p++);
             continue;
         }
@@ -153,6 +155,7 @@ struct Node {
 
 Node* new_node(NodeKind kind, Node* lhs, Node* rhs) {
     Node* node = calloc(1, sizeof(Node));
+    node->kind = kind;
     node->lhs = lhs;
     node->rhs = rhs;
     return node;
@@ -167,7 +170,11 @@ Node* mul();
 Node* primary();
 
 Node* expr() {
+#ifdef DEBUG
+    fprintf(stderr, "expr\n");
+#endif
     Node* node = mul();
+
     while (true) {
         if (consume('+')) {
             node = new_node(ND_ADD, node, mul());
@@ -180,6 +187,10 @@ Node* expr() {
 }
 
 Node* mul() {
+#ifdef DEBUG
+    fprintf(stderr, "mul\n");
+#endif
+
     Node* node = primary();
     while (true) {
         if (consume('*')) {
@@ -192,6 +203,10 @@ Node* mul() {
     }
 }
 Node* primary() {
+#ifdef DEBUG
+    fprintf(stderr, "primary\n");
+#endif
+
     if (consume('(')) {
         Node* node = expr();
         expect(')');
@@ -237,6 +252,8 @@ int main(int argc, char** argv) {
     }
     user_input = argv[1];
     token = tokenize(argv[1]);
+    eprint_token_list(token);
+    Node* root = expr();
 
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
