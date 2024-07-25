@@ -40,6 +40,10 @@ assert 77 '(5+6)*7'
 assert 19 '2*(5+3)+3'
 assert 12 '(2+1)*(1+2)+3'
 
+echo === unary ===
+assert 3 '(1-2)*-3'
+assert 1 '+3+-2'
+
 
 echo === compile error ===
 assert 1 '1 + a'
