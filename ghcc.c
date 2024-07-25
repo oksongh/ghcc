@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #define DEBUG
-
 typedef enum {
     TK_RESERVED,  // 記号
     TK_NUM,       // 整数トークン
@@ -83,7 +81,7 @@ bool consume(char* op) {
 
 void expect(char* op) {
     if (!consume(op)) {
-        error_at(token->str, "'%c'ではない", op);
+        error_at(token->str, "'%s'ではない", op);
     }
 }
 int expect_number() {
@@ -107,10 +105,16 @@ Token* new_token(TokenKind kind, Token* cur, char* str, int len) {
     tok->len = len;
 
     cur->next = tok;
-
     return tok;
 }
-
+bool contains(char* p, int plen, char** strs, int n) {
+    for (size_t i = 0; i < n; i++) {
+        if (strncmp(p, strs[i], plen) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 // 文字列pをトークナイズ
 Token* tokenize(char* p) {
     Token head;
@@ -122,19 +126,11 @@ Token* tokenize(char* p) {
             continue;
         }
 
-        bool found = false;
         char* ops_len2[] = {"<=", ">=", "==", "!="};
-        for (int i = 0; i < sizeof(ops_len2) / sizeof(ops_len2[0]); i++) {
-            if (strncmp(ops_len2[i], p, 2) == 0) {
-                cur = new_token(TK_RESERVED, cur, p, 2);
-                p += 2;
-
-                found = true;
-                break;
-            }
-        }
-        if (found) {
-            break;
+        if (contains(p, 2, ops_len2, sizeof(ops_len2) / sizeof(ops_len2[0]))) {
+            cur = new_token(TK_RESERVED, cur, p, 2);
+            p += 2;
+            continue;
         }
 
         if (strchr("+-*/()<>", *p)) {
@@ -158,6 +154,10 @@ Token* tokenize(char* p) {
     抽象構文木
  */
 typedef enum {
+    ND_EQU,  // ==
+    ND_NEQ,  // !=
+    ND_LEQ,  // <=
+    ND_LSS,  // <
     ND_ADD,
     ND_SUB,
     ND_MUL,
@@ -186,15 +186,52 @@ Node* new_node_num(int val) {
     return node;
 }
 Node* expr();
+Node* equality();
+Node* relational();
+Node* add();
 Node* mul();
-Node* primary();
 Node* unary();
+Node* primary();
+
+Node* expr() {
+    return equality();
+}
+Node* equality() {
+    Node* node = relational();
+    while (true) {
+        if (consume("==")) {
+            node = new_node(ND_EQU, node, relational());
+        } else if (consume("!=")) {
+            node = new_node(ND_NEQ, node, relational());
+        } else {
+            return node;
+        }
+    }
+}
+Node* relational() {
+    // todo
+    Node* node = add();
+    while (true) {
+        if (consume("<")) {
+            node = new_node(ND_LSS, node, add());
+
+        } else if (consume("<=")) {
+            node = new_node(ND_LEQ, node, add());
+
+        } else if (consume(">")) {
+            node = new_node(ND_LSS, add(), node);
+
+        } else if (consume(">=")) {
+            node = new_node(ND_LEQ, add(), node);
+
+        } else {
+            return node;
+        }
+    }
+}
 
 // mul ('+' mul | '-' mul)*
-Node* expr() {
-#ifdef DEBUG
-    fprintf(stderr, "expr\n");
-#endif
+Node* add() {
     Node* node = mul();
 
     while (true) {
@@ -210,10 +247,6 @@ Node* expr() {
 
 // unary ('*' unary | '\' unary)*
 Node* mul() {
-#ifdef DEBUG
-    fprintf(stderr, "mul\n");
-#endif
-
     Node* node = unary();
     while (true) {
         if (consume("*")) {
@@ -235,10 +268,6 @@ Node* unary() {
 }
 
 Node* primary() {
-#ifdef DEBUG
-    fprintf(stderr, "primary\n");
-#endif
-
     if (consume("(")) {
         Node* node = expr();
         expect(")");
@@ -255,8 +284,9 @@ void gen(Node* node) {
     gen(node->lhs);
     gen(node->rhs);
 
-    printf("    pop rdi\n");
-    printf("    pop rax\n");
+    // a <op> b
+    printf("    pop rdi\n");  // b
+    printf("    pop rax\n");  // a
 
     switch (node->kind) {
         case ND_ADD:
@@ -272,6 +302,28 @@ void gen(Node* node) {
             printf("    cqo\n");
             printf("    idiv rdi\n");
             break;
+        case ND_EQU:
+            printf("    cmp rax, rdi\n");
+            printf("    sete al\n");
+            printf("    movzb rax,al\n");
+            break;
+        case ND_LEQ:
+            printf("    cmp rax, rdi\n");
+            printf("    setle al\n");
+            printf("    movzb rax,al\n");
+            break;
+        case ND_LSS:
+            printf("    cmp rax, rdi\n");
+            printf("    setl al\n");
+            printf("    movzb rax,al\n");
+            break;
+        case ND_NEQ:
+            printf("    cmp rax, rdi\n");
+            printf("    setne al\n");
+            printf("    movzb rax,al\n");
+            break;
+        default:
+            error("unexpected state");
     }
     printf("    push rax\n");
 }
