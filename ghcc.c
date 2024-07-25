@@ -20,6 +20,7 @@ struct Token {
     Token* next;
     int val;    // kind == TK_NUMのときの数値
     char* str;  // トークン文字列
+    int len;    // トークン長
 };
 
 // 着目するトークン
@@ -30,7 +31,7 @@ void eprint_token_list(Token* tok) {
         char str[200];
         switch (cur->kind) {
             case TK_RESERVED:
-                sprintf(str, ":%c:", cur->str[0]);
+                snprintf(str, cur->len + 1 + 2, ":%.*s:", cur->len, cur->str);
                 break;
             case TK_NUM:
                 sprintf(str, ":%d:", cur->val);
@@ -71,15 +72,16 @@ void error_at(char* loc, char* fmt, ...) {
 
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;
-bool consume(char op) {
-    if (token->kind != TK_RESERVED || token->str[0] != op) {
+bool consume(char* op) {
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len || memcmp(op, token->str, token->len)) {
         return false;
     }
     token = token->next;
     return true;
 }
 
-void expect(char op) {
+void expect(char* op) {
     if (!consume(op)) {
         error_at(token->str, "'%c'ではない", op);
     }
@@ -98,10 +100,12 @@ bool at_eof() {
 }
 
 // link token list
-Token* new_token(TokenKind kind, Token* cur, char* str) {
+Token* new_token(TokenKind kind, Token* cur, char* str, int len) {
     Token* tok = calloc(1, sizeof(Token));
     tok->kind = kind;
     tok->str = str;
+    tok->len = len;
+
     cur->next = tok;
 
     return tok;
@@ -117,20 +121,36 @@ Token* tokenize(char* p) {
             p++;
             continue;
         }
-        if (strchr("+-*/()", *p)) {
-            cur = new_token(TK_RESERVED, cur, p++);
+
+        bool found = false;
+        char* ops_len2[] = {"<=", ">=", "==", "!="};
+        for (int i = 0; i < sizeof(ops_len2) / sizeof(ops_len2[0]); i++) {
+            if (strncmp(ops_len2[i], p, 2) == 0) {
+                cur = new_token(TK_RESERVED, cur, p, 2);
+                p += 2;
+
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            break;
+        }
+
+        if (strchr("+-*/()<>", *p)) {
+            cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;
         }
 
         if (isdigit(*p)) {
-            cur = new_token(TK_NUM, cur, p);
+            cur = new_token(TK_NUM, cur, p, 0);
             cur->val = strtol(p, &p, 10);
             continue;
         }
 
         error_at(p, "cannot tokeinze");
     }
-    new_token(TK_EOF, cur, p);
+    new_token(TK_EOF, cur, p, 0);
     return head.next;
 }
 
@@ -178,9 +198,9 @@ Node* expr() {
     Node* node = mul();
 
     while (true) {
-        if (consume('+')) {
+        if (consume("+")) {
             node = new_node(ND_ADD, node, mul());
-        } else if (consume('-')) {
+        } else if (consume("-")) {
             node = new_node(ND_SUB, node, mul());
         } else {
             return node;
@@ -196,9 +216,9 @@ Node* mul() {
 
     Node* node = unary();
     while (true) {
-        if (consume('*')) {
+        if (consume("*")) {
             node = new_node(ND_MUL, node, unary());
-        } else if (consume('/')) {
+        } else if (consume("/")) {
             node = new_node(ND_DIV, node, unary());
         } else {
             return node;
@@ -207,10 +227,10 @@ Node* mul() {
 }
 // "'+'? primary
 Node* unary() {
-    if (consume('-')) {
+    if (consume("-")) {
         return new_node(ND_SUB, new_node_num(0), primary());
     }
-    consume('+');
+    consume("+");
     return primary();
 }
 
@@ -219,9 +239,9 @@ Node* primary() {
     fprintf(stderr, "primary\n");
 #endif
 
-    if (consume('(')) {
+    if (consume("(")) {
         Node* node = expr();
-        expect(')');
+        expect(")");
         return node;
     }
     return new_node_num(expect_number());
