@@ -1,6 +1,11 @@
-CFLAGS=-std=c11 -g -static
+CFLAGS=-std=c11 -Wall -g -static
+SRCS=$(wildcard *.c)
+OBJS=$(SRCS:.c=.o)
 
-ghcc: ghcc.c
+ghcc: $(OBJS)
+	$(CC) -o ghcc $(OBJS) $(LDFLAGS)
+
+$(OBJS): ghcc.h
 
 test: ghcc
 	./test.sh
