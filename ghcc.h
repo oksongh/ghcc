@@ -16,6 +16,7 @@ int ghcc(char* code);
 
 typedef enum {
     TK_RESERVED,  // 記号
+    TK_IDENT,     // 識別子
     TK_NUM,       // 整数トークン
     TK_EOF,       // 入力終了トークン
 } TokenKind;
@@ -35,6 +36,8 @@ void eprint_token_list(Token* tok);
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;
 bool consume(char* op);
+
+Token* consume_ident();
 
 void expect(char* op);
 int expect_number();
@@ -60,6 +63,9 @@ typedef enum {
     ND_MUL,
     ND_DIV,
     ND_NUM,
+    ND_ASSIGN,  // assign
+    ND_STMT,    // statement
+    ND_LVAR,    // local variable
 } NodeKind;
 
 typedef struct Node Node;
@@ -68,12 +74,16 @@ struct Node {
     Node* lhs;
     Node* rhs;
     int val;
+    int offset;
 };
 
 Node* new_node(NodeKind kind, Node* lhs, Node* rhs);
 Node* new_node_num(int val);
 
+void program();
+Node* stmt();
 Node* expr();
+Node* assign();
 Node* equality();
 Node* relational();
 Node* add();

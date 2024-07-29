@@ -33,6 +33,7 @@ void eprint_token_list(Token* tok) {
         char str[200];
         switch (cur->kind) {
             case TK_RESERVED:
+            case TK_IDENT:
                 snprintf(str, cur->len + 1 + 2, ":%.*s:", cur->len, cur->str);
                 break;
             case TK_NUM:
@@ -41,6 +42,7 @@ void eprint_token_list(Token* tok) {
             case TK_EOF:
                 sprintf(str, ":%s:", "eof");
                 break;
+
             default:
                 break;
         }
@@ -60,6 +62,15 @@ bool consume(char* op) {
     return true;
 }
 
+Token* consume_ident() {
+    if (token->kind != TK_IDENT) {
+        return NULL;
+    }
+    Token* tmp = token;
+    token = token->next;
+    return tmp;
+}
+
 void expect(char* op) {
     if (!consume(op)) {
         error_at(token->str, "'%s'ではない", op);
@@ -75,6 +86,7 @@ int expect_number() {
 }
 
 bool at_eof() {
+    // eprint_token_list(token);
     return token->kind == TK_EOF;
 }
 
@@ -116,7 +128,7 @@ Token* tokenize(char* p) {
             continue;
         }
 
-        if (strchr("+-*/()<>", *p)) {
+        if (strchr("+-*/()<>=;", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;
         }
@@ -124,6 +136,10 @@ Token* tokenize(char* p) {
         if (isdigit(*p)) {
             cur = new_token(TK_NUM, cur, p, 0);
             cur->val = strtol(p, &p, 10);
+            continue;
+        }
+        if ('a' <= *p && *p <= 'z') {
+            cur = new_token(TK_IDENT, cur, p++, 1);
             continue;
         }
 
@@ -134,4 +150,6 @@ Token* tokenize(char* p) {
 }
 void parse(char* uin) {
     token = tokenize(uin);
+    eprint_token_list(token);
+    // exit(0);
 }
