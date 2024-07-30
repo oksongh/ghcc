@@ -51,6 +51,10 @@ void eprint_token_list(Token* tok) {
     }
     fprintf(stderr, "\n");
 }
+
+bool is_alpha(char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;
 bool consume(char* op) {
@@ -138,8 +142,14 @@ Token* tokenize(char* p) {
             cur->val = strtol(p, &p, 10);
             continue;
         }
-        if ('a' <= *p && *p <= 'z') {
-            cur = new_token(TK_IDENT, cur, p++, 1);
+        if (is_alpha(*p)) {
+            char* start = p;
+
+            while (is_alpha(*++p));
+            // a 0
+            // s p
+
+            cur = new_token(TK_IDENT, cur, start, p - start);
             continue;
         }
 

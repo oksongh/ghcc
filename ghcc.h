@@ -15,6 +15,7 @@ void error_at(char* loc, char* fmt, ...);
 int ghcc(char* code);
 
 typedef enum {
+    TK_RETURN,
     TK_RESERVED,  // 記号
     TK_IDENT,     // 識別子
     TK_NUM,       // 整数トークン
@@ -33,6 +34,7 @@ struct Token {
 
 void eprint_token_list(Token* tok);
 
+bool is_alpha(char c);
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;
 bool consume(char* op);
@@ -77,8 +79,18 @@ struct Node {
     int offset;
 };
 
+typedef struct LVar LVar;
+struct LVar {
+    LVar* next;
+    char* name;  // 変数名
+    int len;     // 変数名の長さ
+    int offset;  // RBPからのoffset
+};
+
 Node* new_node(NodeKind kind, Node* lhs, Node* rhs);
 Node* new_node_num(int val);
+
+LVar* find_lvar(Token* tok);
 
 void program();
 Node* stmt();

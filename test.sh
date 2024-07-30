@@ -85,6 +85,10 @@ assert 1 'z=-4;z+10==6'
 assert 1 'a=z=-4;a==z'
 assert 0 'a=z=-4;a+z+8'
 
+echo === multiple variable name ===
+assert 10 'abc=10;abc'
+assert 0 'num=-10;num+10'
+
 echo === compile error ===
 # assert 1 '1 + a'
 assert 1 '1 + +'
