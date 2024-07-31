@@ -43,7 +43,7 @@ void program() {
 
 Node* stmt() {
     Node* node = expr();
-    consume(";");
+    expect(";");
     return node;
 }
 
