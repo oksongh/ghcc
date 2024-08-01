@@ -35,11 +35,14 @@ struct Token {
 void eprint_token_list(Token* tok);
 
 bool is_alpha(char c);
+
+bool is_token_target(char c);
+
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;
 bool consume(char* op);
 
-Token* consume_ident();
+Token* consume_token();
 
 void expect(char* op);
 int expect_number();
@@ -68,6 +71,7 @@ typedef enum {
     ND_ASSIGN,  // assign
     ND_STMT,    // statement
     ND_LVAR,    // local variable
+    ND_RETURN
 } NodeKind;
 
 typedef struct Node Node;

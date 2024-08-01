@@ -42,6 +42,12 @@ void program() {
 }
 
 Node* stmt() {
+    Token* tok = consume_token(TK_RETURN);
+    if (tok) {
+        Node* node = new_node(ND_RETURN, expr(), NULL);
+        expect(";");
+        return node;
+    }
     Node* node = expr();
     expect(";");
     return node;
@@ -136,7 +142,7 @@ Node* primary() {
         expect(")");
         return node;
     }
-    Token* tok = consume_ident();
+    Token* tok = consume_token(TK_IDENT);
 
     if (tok) {
         Node* node = calloc(1, sizeof(Node));
@@ -193,6 +199,14 @@ void gen(Node* node) {
             printf("    pop rax\n");  // left value (pointer)
             printf("    mov [rax], rdi\n");
             printf("    push rdi\n");
+            return;
+
+        case ND_RETURN:
+            gen(node->lhs);
+            printf("    pop rax\n");
+            printf("    mov rsp, rbp\n");
+            printf("    pop rbp\n");
+            printf("    ret\n");
             return;
     }
 

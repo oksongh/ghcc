@@ -42,8 +42,11 @@ void eprint_token_list(Token* tok) {
             case TK_EOF:
                 sprintf(str, ":%s:", "eof");
                 break;
-
+            case TK_RETURN:
+                sprintf(str, ":%s:", "return");
+                break;
             default:
+                error_at(cur->str, "unexpected token type");
                 break;
         }
         fprintf(stderr, "%s", str);
@@ -54,6 +57,10 @@ void eprint_token_list(Token* tok) {
 
 bool is_alpha(char c) {
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+bool is_token_target(char c) {
+    return is_alpha(c) || ('0' <= c && c <= '9') || (c == '_');
 }
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;
@@ -66,10 +73,11 @@ bool consume(char* op) {
     return true;
 }
 
-Token* consume_ident() {
-    if (token->kind != TK_IDENT) {
+Token* consume_token(TokenKind kind) {
+    if (token->kind != kind) {
         return NULL;
     }
+
     Token* tmp = token;
     token = token->next;
     return tmp;
@@ -142,6 +150,13 @@ Token* tokenize(char* p) {
             cur->val = strtol(p, &p, 10);
             continue;
         }
+
+        if (strncmp(p, "return", 6) == 0 && !is_token_target(p[6])) {
+            cur = new_token(TK_RETURN, cur, p, 6);
+            p += 6;
+            continue;
+        }
+
         if (is_alpha(*p)) {
             char* start = p;
 

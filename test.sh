@@ -89,6 +89,11 @@ echo === multiple variable name ===
 assert 10 'abc=10;abc;'
 assert 0 'num=-10;num+10;'
 
+echo === return ===
+assert 10 'return 10;'
+assert 200 'return 10*20;'
+assert 6 'a = 10/2; return a+1;'
+
 echo === compile error ===
 # assert 1 '1 + a'
 assert 1 '1 + +'
