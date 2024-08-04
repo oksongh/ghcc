@@ -81,6 +81,7 @@ assert 0 '-3>=-2;'
 echo === statement ===
 assert 10 'a=10;'
 assert 10 'a=10;a;'
+assert 4 'a = 10;a = 4;a;'
 assert 1 'z=-4;z+10==6;'
 assert 1 'a=z=-4;a==z;'
 assert 0 'a=z=-4;a+z+8;'
@@ -94,7 +95,7 @@ assert 10 'return 10;'
 assert 200 'return 10*20;'
 assert 6 'a = 10/2; return a+1;'
 
-echo === compile error ===
+echo === throw compile error ===
 # assert 1 '1 + a'
 assert 1 '1 + +'
 
