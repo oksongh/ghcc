@@ -42,12 +42,28 @@ void program() {
 }
 
 Node* stmt() {
-    Token* tok = consume_token(TK_RETURN);
-    if (tok) {
+    if (consume_token(TK_RETURN)) {
         Node* node = new_node(ND_RETURN, expr(), NULL);
         expect(";");
         return node;
     }
+
+    if (consume_token(TK_IF)) {
+        consume("(");
+        Node* cond = expr();
+        consume(")");
+
+        Node* then = stmt();
+
+        Node* else_ = NULL;
+        if (consume_token(TK_ELSE)) {
+            else_ = stmt();
+        }
+
+        Node* then_else = new_node(ND_THEN_ELSE, then, else_);
+        return new_node(ND_IF, cond, then_else);
+    }
+
     Node* node = expr();
     expect(";");
     return node;
@@ -179,7 +195,10 @@ void gen_lval(Node* node) {
     printf("    push rax\n");
 }
 
+static int jmp_label = 0;
 void gen(Node* node) {
+    int label_num = jmp_label++;
+
     switch (node->kind) {
         case ND_NUM:
             printf("    push %d\n", node->val);
@@ -207,6 +226,37 @@ void gen(Node* node) {
             printf("    mov rsp, rbp\n");
             printf("    pop rbp\n");
             printf("    ret\n");
+            return;
+        case ND_IF:
+            gen(node->lhs);  // condition
+            printf("    pop rax\n");
+            printf("    cmp rax, 0\n");
+
+            if (node->rhs->rhs == NULL) {                  // no else
+                printf("    je .Lend%03d\n", label_num);   //
+                gen(node->rhs->lhs);                       // then
+            } else {                                       // else exist
+                printf("    je .Lelse%03d\n", label_num);  //
+                gen(node->rhs->lhs);                       // then
+                printf("    jmp .Lend%03d\n", label_num);
+
+                printf(".Lelse%03d:\n", label_num);
+                // fprintf(stderr, "%s", node->rhs);
+
+                gen(node->rhs->rhs);  // else
+            }
+
+            // printf("    jmp .Lend%03d\n", label_num);
+            // printf(".Lelse%03d\n", label_num);
+            // fprintf(stderr, "%s", node->rhs);
+            // if (((node->rhs)->lhs) == NULL) {
+            //     gen(node->rhs->lhs);  // else
+            // }
+            printf(".Lend%03d:\n", label_num);
+
+            return;
+        case ND_THEN_ELSE:
+
             return;
     }
 

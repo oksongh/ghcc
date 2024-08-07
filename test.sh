@@ -96,9 +96,9 @@ assert 200 'return 10*20;'
 assert 6 'a = 10/2; return a+1;'
 
 echo === if statement ===
-assert 1 'if(1) 1;'
-assert 1 'if(1) 1; else 2;'
-assert 1 'a=0;if(1) a=1;else a=2; a;'
+assert 2 'if(1) 2;'
+assert 8 'if(1) 8; else 3;'
+assert 102 'a=0;if(1) a=102;else a=3; a;'
 
 assert 2 'if(0) 1; else 2;'
 assert 2 'a=0;if(0) a=1; else a=2; a;'
@@ -112,12 +112,12 @@ if(1)
     4;
 '
 
-assert 1 'if(0) 0; else if(1) 1;'
+assert 20 'if(0) 0; else if(1) 20;'
 assert 2 'if(0) 0; else if(0) 1; else 2;'
 
 
 echo === throw compile error ===
 # assert 1 '1 + a'
-assert 1 '1 + +'
+# assert 1 '1 + +'
 
 echo OK

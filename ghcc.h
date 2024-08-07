@@ -15,7 +15,9 @@ void error_at(char* loc, char* fmt, ...);
 int ghcc(char* code);
 
 typedef enum {
-    TK_RETURN,
+    TK_RETURN,    // return文
+    TK_IF,        // if文
+    TK_ELSE,      // if文
     TK_RESERVED,  // 記号
     TK_IDENT,     // 識別子
     TK_NUM,       // 整数トークン
@@ -37,6 +39,8 @@ void eprint_token_list(Token* tok);
 bool is_alpha(char c);
 
 bool is_token_target(char c);
+
+bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword, int len);
 
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;
@@ -71,7 +75,9 @@ typedef enum {
     ND_ASSIGN,  // assign
     ND_STMT,    // statement
     ND_LVAR,    // local variable
-    ND_RETURN
+    ND_RETURN,
+    ND_IF,
+    ND_THEN_ELSE,
 } NodeKind;
 
 typedef struct Node Node;

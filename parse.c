@@ -34,6 +34,8 @@ void eprint_token_list(Token* tok) {
         switch (cur->kind) {
             case TK_RESERVED:
             case TK_IDENT:
+            case TK_IF:
+            case TK_ELSE:
                 snprintf(str, cur->len + 1 + 2, ":%.*s:", cur->len, cur->str);
                 break;
             case TK_NUM:
@@ -45,8 +47,9 @@ void eprint_token_list(Token* tok) {
             case TK_RETURN:
                 sprintf(str, ":%s:", "return");
                 break;
+
             default:
-                error_at(cur->str, "unexpected token type");
+                error_at(cur->str, "print token:unexpected token type");
                 break;
         }
         fprintf(stderr, "%s", str);
@@ -62,6 +65,21 @@ bool is_alpha(char c) {
 bool is_token_target(char c) {
     return is_alpha(c) || ('0' <= c && c <= '9') || (c == '_');
 }
+
+bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword, int len) {
+    // printf("%d&", strncmp(*p, keyword, len) == 0);
+    // printf("%d\n\n", !is_token_target((*p)[len]));
+
+    if (strncmp(*p, keyword, len) == 0 && !is_token_target((*p)[len])) {
+        *cur = new_token(tk, *cur, *p, len);
+        // fprintf(stderr, "^%.*s^\n", len, *p);
+        *p += len;
+        // fprintf(stderr, "^%.*s^\n", len, *p);
+        return true;
+    }
+    return false;
+}
+
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;
 bool consume(char* op) {
@@ -151,11 +169,11 @@ Token* tokenize(char* p) {
             continue;
         }
 
-        if (strncmp(p, "return", 6) == 0 && !is_token_target(p[6])) {
-            cur = new_token(TK_RETURN, cur, p, 6);
-            p += 6;
-            continue;
-        }
+        if (consume_keyword(TK_RETURN, &cur, &p, "return", 6)) continue;
+
+        if (consume_keyword(TK_IF, &cur, &p, "if", 2)) continue;
+
+        if (consume_keyword(TK_ELSE, &cur, &p, "else", 4)) continue;
 
         if (is_alpha(*p)) {
             char* start = p;
