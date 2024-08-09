@@ -246,16 +246,7 @@ void gen(Node* node) {
                 gen(node->rhs->rhs);  // else
             }
 
-            // printf("    jmp .Lend%03d\n", label_num);
-            // printf(".Lelse%03d\n", label_num);
-            // fprintf(stderr, "%s", node->rhs);
-            // if (((node->rhs)->lhs) == NULL) {
-            //     gen(node->rhs->lhs);  // else
-            // }
             printf(".Lend%03d:\n", label_num);
-
-            return;
-        case ND_THEN_ELSE:
 
             return;
     }
