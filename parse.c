@@ -36,6 +36,7 @@ void eprint_token_list(Token* tok) {
             case TK_IDENT:
             case TK_IF:
             case TK_ELSE:
+            case TK_FOR:
                 snprintf(str, cur->len + 1 + 2, ":%.*s:", cur->len, cur->str);
                 break;
             case TK_NUM:
@@ -174,6 +175,8 @@ Token* tokenize(char* p) {
         if (consume_keyword(TK_IF, &cur, &p, "if", 2)) continue;
 
         if (consume_keyword(TK_ELSE, &cur, &p, "else", 4)) continue;
+
+        if (consume_keyword(TK_FOR, &cur, &p, "for", 3)) continue;
 
         if (is_alpha(*p)) {
             char* start = p;

@@ -18,6 +18,7 @@ typedef enum {
     TK_RETURN,    // return文
     TK_IF,        // if文
     TK_ELSE,      // if文
+    TK_FOR,       // for文
     TK_RESERVED,  // 記号
     TK_IDENT,     // 識別子
     TK_NUM,       // 整数トークン
@@ -77,7 +78,10 @@ typedef enum {
     ND_LVAR,    // local variable
     ND_RETURN,
     ND_IF,
-    ND_THEN_ELSE,
+    ND_FOR,
+    ND_LINKED,  // 特殊構文(if,for,while)用のlinked list。
+                // nd_linked.lfs=value
+                // nd_linked.rhs = null | nd_linked;
 } NodeKind;
 
 typedef struct Node Node;

@@ -115,6 +115,11 @@ if(1)
 assert 20 'if(0) 0; else if(1) 20;'
 assert 2 'if(0) 0; else if(0) 1; else 2;'
 
+echo === for statement ===
+assert 10 'a=0;for(i=0;i<10;i=i+1) a=a+1; return a;'
+assert 45 'a=0;for(i=0;i<10;i=i+1) a=a+i; return a;'
+assert 10 'a=0;for(i=0;i<10;i=i+1) return 10;'
+assert 45 'for(;;) return 45;'
 
 echo === throw compile error ===
 # assert 1 '1 + a'

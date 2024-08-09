@@ -31,6 +31,18 @@ LVar* find_lvar(Token* tok) {
     return NULL;
 }
 
+// s:null終端済み
+void define_label(char* s, int label_num) {
+    printf("%s%03d", s, label_num);
+    printf(":\n");
+}
+
+// s:null終端済み
+void call_label(char* s, int label_num) {
+    printf("%s%03d", s, label_num);
+    printf("\n");
+}
+
 Node* code[100];
 
 void program() {
@@ -60,8 +72,35 @@ Node* stmt() {
             else_ = stmt();
         }
 
-        Node* then_else = new_node(ND_THEN_ELSE, then, else_);
+        Node* then_else = new_node(ND_LINKED, then, else_);
         return new_node(ND_IF, cond, then_else);
+    }
+
+    if (consume_token(TK_FOR)) {
+        consume("(");
+
+        Node *init, *cond, *update;
+
+        if (!consume(";")) {
+            init = expr();
+            expect(";");
+        }
+
+        if (!consume(";")) {
+            cond = expr();
+            expect(";");
+        }
+
+        if (!consume(")")) {
+            update = expr();
+            expect(")");
+        }
+        Node* loop = stmt();
+        return new_node(ND_FOR,
+                        loop,
+                        new_node(ND_LINKED, init,
+                                 new_node(ND_LINKED, cond,
+                                          new_node(ND_LINKED, update, NULL))));
     }
 
     Node* node = expr();
@@ -227,6 +266,7 @@ void gen(Node* node) {
             printf("    pop rbp\n");
             printf("    ret\n");
             return;
+
         case ND_IF:
             gen(node->lhs);  // condition
             printf("    pop rax\n");
@@ -247,7 +287,35 @@ void gen(Node* node) {
             }
 
             printf(".Lend%03d:\n", label_num);
+            return;
 
+        case ND_FOR:
+            if (node->rhs->lhs) {
+                gen(node->rhs->lhs);  // init
+            }
+            define_label(".Lbegin", label_num);
+            {
+                // compare
+                if (node->rhs->rhs->lhs) {
+                    gen(node->rhs->rhs->lhs);
+                    // pop, compare, 0ならgoto end;
+                    printf("    cmp rax, 0\n");
+                    call_label("    je .Lend", label_num);
+                }
+
+                // execute
+                if (node->lhs) {
+                    gen(node->lhs);
+                }
+                printf("    nop\n");
+
+                // update
+                if (node->rhs->rhs->rhs->lhs) {
+                    gen(node->rhs->rhs->rhs->lhs);
+                }
+                call_label("    jmp .Lbegin", label_num);
+            }
+            define_label(".Lend", label_num);
             return;
     }
 
