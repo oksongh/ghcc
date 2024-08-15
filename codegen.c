@@ -125,8 +125,7 @@ Node* stmt() {
             else_ = stmt();
         }
 
-        Node* then_else = new_node(ND_LINKED, then, else_);
-        return new_node(ND_IF, cond, then_else);
+        return new_node_nth(ND_IF, cond, then, else_, NULL);
     }
 
     if (consume_token(TK_FOR)) {
@@ -317,54 +316,62 @@ void gen(Node* node) {
             return;
 
         case ND_IF:
-            gen(node->lhs);  // condition
-            printf("    pop rax\n");
-            printf("    cmp rax, 0\n");
+            // avoid to redefine local val:cond
+            {
+                Node* cond = node->lhs;
+                Node* then = node->rhs;
+                Node* else_ = node->ths;
 
-            if (node->rhs->rhs == NULL) {                  // no else
-                printf("    je .Lend%03d\n", label_num);   //
-                gen(node->rhs->lhs);                       // then
-            } else {                                       // else exist
-                printf("    je .Lelse%03d\n", label_num);  //
-                gen(node->rhs->lhs);                       // then
-                printf("    jmp .Lend%03d\n", label_num);
+                gen(cond);
+                printf("    pop rax\n");
+                printf("    cmp rax, 0\n");
 
-                printf(".Lelse%03d:\n", label_num);
+                if (else_ == NULL) {
+                    printf("    je .Lend%03d\n", label_num);
+                    gen(then);
+                } else {
+                    printf("    je .Lelse%03d\n", label_num);
+                    gen(then);
+                    printf("    jmp .Lend%03d\n", label_num);
+                    printf(".Lelse%03d:\n", label_num);
+                    gen(else_);
+                }
 
-                gen(node->rhs->rhs);  // else
+                printf(".Lend%03d:\n", label_num);
             }
-
-            printf(".Lend%03d:\n", label_num);
             return;
 
         case ND_FOR:
-            Node* init = node->lhs;
-            Node* cond = node->rhs;
-            Node* update = node->ths;
-            Node* loop = node->fhs;
+            // avoid to redefine local val:cond
+            {
+                Node* init = node->lhs;
+                Node* cond = node->rhs;
+                Node* update = node->ths;
+                Node* loop = node->fhs;
 
-            if (init) {
-                gen(init);
+                if (init) {
+                    gen(init);
+                }
+                define_label(".Lbegin", label_num);
+
+                if (cond) {
+                    gen(cond);
+                    // pop, compare, 0ならgoto end;
+                    printf("    cmp rax, 0\n");
+                    call_label("    je .Lend", label_num);
+                }
+
+                if (loop) {
+                    gen(loop);
+                }
+
+                if (update) {
+                    gen(update);
+                }
+
+                call_label("    jmp .Lbegin", label_num);
+                define_label(".Lend", label_num);
             }
-            define_label(".Lbegin", label_num);
-
-            if (cond) {
-                gen(cond);
-                // pop, compare, 0ならgoto end;
-                printf("    cmp rax, 0\n");
-                call_label("    je .Lend", label_num);
-            }
-
-            if (loop) {
-                gen(loop);
-            }
-
-            if (update) {
-                gen(update);
-            }
-
-            call_label("    jmp .Lbegin", label_num);
-            define_label(".Lend", label_num);
             return;
     }
 
