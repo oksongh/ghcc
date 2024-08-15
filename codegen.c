@@ -6,7 +6,7 @@
 
 /*
     抽象構文木
- */
+*/
 
 Node* new_node(NodeKind kind, Node* lhs, Node* rhs) {
     Node* node = calloc(1, sizeof(Node));
@@ -15,13 +15,21 @@ Node* new_node(NodeKind kind, Node* lhs, Node* rhs) {
     node->rhs = rhs;
     return node;
 }
+
+Node* new_node_nth(NodeKind kind, Node* lhs, Node* rhs, Node* ths, Node* fhs) {
+    Node* node = new_node(kind, lhs, rhs);
+    node->ths = ths;
+    node->fhs = fhs;
+    return node;
+}
+
 Node* new_node_num(int val) {
     Node* node = new_node(ND_NUM, NULL, NULL);
     node->val = val;
     return node;
 }
 
-LVar* locals;
+LVar* locals = NULL;
 LVar* find_lvar(Token* tok) {
     for (LVar* var = locals; var; var = var->next) {
         if (var->len == tok->len && memcmp(var->name, tok->str, var->len) == 0) {
@@ -41,6 +49,51 @@ void define_label(char* s, int label_num) {
 void call_label(char* s, int label_num) {
     printf("%s%03d", s, label_num);
     printf("\n");
+}
+void debug_printf(char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    fprintf(stderr, "DEBUG:");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+}
+
+char* NodeKindToString(NodeKind nk) {
+    switch (nk) {
+        case ND_EQU:
+            return "ND_EQU";
+        case ND_NEQ:
+            return "ND_NEQ";
+        case ND_LEQ:
+            return "ND_LEQ";
+        case ND_LSS:
+            return "ND_LSS";
+        case ND_ADD:
+            return "ND_ADD";
+        case ND_SUB:
+            return "ND_SUB";
+        case ND_MUL:
+            return "ND_MUL";
+        case ND_DIV:
+            return "ND_DIV";
+        case ND_NUM:
+            return "ND_NUM";
+        case ND_ASSIGN:
+            return "ND_ASSIGN";
+        case ND_STMT:
+            return "ND_STMT";
+        case ND_LVAR:
+            return "ND_LVAR";
+        case ND_RETURN:
+            return "ND_RETURN";
+        case ND_IF:
+            return "ND_IF";
+        case ND_FOR:
+            return "ND_FOR";
+        default:
+            error("unexpected node kind:%d", nk);
+    }
 }
 
 Node* code[100];
@@ -79,7 +132,7 @@ Node* stmt() {
     if (consume_token(TK_FOR)) {
         consume("(");
 
-        Node *init, *cond, *update;
+        Node *init = NULL, *cond = NULL, *update = NULL;
 
         if (!consume(";")) {
             init = expr();
@@ -96,11 +149,7 @@ Node* stmt() {
             expect(")");
         }
         Node* loop = stmt();
-        return new_node(ND_FOR,
-                        loop,
-                        new_node(ND_LINKED, init,
-                                 new_node(ND_LINKED, cond,
-                                          new_node(ND_LINKED, update, NULL))));
+        return new_node_nth(ND_FOR, init, cond, update, loop);
     }
 
     Node* node = expr();
@@ -281,7 +330,6 @@ void gen(Node* node) {
                 printf("    jmp .Lend%03d\n", label_num);
 
                 printf(".Lelse%03d:\n", label_num);
-                // fprintf(stderr, "%s", node->rhs);
 
                 gen(node->rhs->rhs);  // else
             }
@@ -290,31 +338,32 @@ void gen(Node* node) {
             return;
 
         case ND_FOR:
-            if (node->rhs->lhs) {
-                gen(node->rhs->lhs);  // init
+            Node* init = node->lhs;
+            Node* cond = node->rhs;
+            Node* update = node->ths;
+            Node* loop = node->fhs;
+
+            if (init) {
+                gen(init);
             }
             define_label(".Lbegin", label_num);
-            {
-                // compare
-                if (node->rhs->rhs->lhs) {
-                    gen(node->rhs->rhs->lhs);
-                    // pop, compare, 0ならgoto end;
-                    printf("    cmp rax, 0\n");
-                    call_label("    je .Lend", label_num);
-                }
 
-                // execute
-                if (node->lhs) {
-                    gen(node->lhs);
-                }
-                printf("    nop\n");
-
-                // update
-                if (node->rhs->rhs->rhs->lhs) {
-                    gen(node->rhs->rhs->rhs->lhs);
-                }
-                call_label("    jmp .Lbegin", label_num);
+            if (cond) {
+                gen(cond);
+                // pop, compare, 0ならgoto end;
+                printf("    cmp rax, 0\n");
+                call_label("    je .Lend", label_num);
             }
+
+            if (loop) {
+                gen(loop);
+            }
+
+            if (update) {
+                gen(update);
+            }
+
+            call_label("    jmp .Lbegin", label_num);
             define_label(".Lend", label_num);
             return;
     }

@@ -80,8 +80,8 @@ typedef enum {
     ND_IF,
     ND_FOR,
     ND_LINKED,  // 特殊構文(if,for,while)用のlinked list。
-                // nd_linked.lfs=value
-                // nd_linked.rhs = null | nd_linked;
+    // nd_linked.lfs=value
+    // nd_linked.rhs = null | nd_linked;
 } NodeKind;
 
 typedef struct Node Node;
@@ -89,6 +89,9 @@ struct Node {
     NodeKind kind;
     Node* lhs;
     Node* rhs;
+    Node* ths;  // third
+    Node* fhs;  // fourth
+
     int val;
     int offset;
 };
