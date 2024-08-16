@@ -151,6 +151,15 @@ Node* stmt() {
         return new_node_nth(ND_FOR, init, cond, update, loop);
     }
 
+    if (consume_token(TK_WHILE)) {
+        expect("(");
+        Node* cond = expr();
+        expect(")");
+        Node* loop = stmt();
+
+        return new_node(ND_WHILE, cond, loop);
+    }
+
     Node* node = expr();
     expect(";");
     return node;
@@ -369,6 +378,25 @@ void gen(Node* node) {
                     gen(update);
                 }
 
+                call_label("    jmp .Lbegin", label_num);
+                define_label(".Lend", label_num);
+            }
+            return;
+        case ND_WHILE:
+            // avoid to redefine local val:cond
+            {
+                Node* cond = node->lhs;
+                Node* loop = node->rhs;
+
+                define_label(".Lbegin", label_num);
+
+                gen(cond);
+
+                printf("    pop rax\n");
+                printf("    cmp rax, 0\n");
+                call_label("    je .Lend", label_num);
+
+                gen(loop);
                 call_label("    jmp .Lbegin", label_num);
                 define_label(".Lend", label_num);
             }

@@ -121,6 +121,11 @@ assert 45 'a=0;for(i=0;i<10;i=i+1) a=a+i; return a;'
 assert 10 'a=0;for(i=0;i<10;i=i+1) return 10;'
 assert 45 'for(;;) return 45;'
 
+echo === while statement ===
+assert 10 'i=10;while(i>0)i=i-1; return i+10;'
+assert 10 'while(1) return 10; return 4;'
+assert 10 'while(0) return 4; return 10;'
+
 echo === throw compile error ===
 # assert 1 '1 + a'
 # assert 1 '1 + +'

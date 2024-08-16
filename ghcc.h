@@ -19,6 +19,7 @@ typedef enum {
     TK_IF,        // if文
     TK_ELSE,      // if文
     TK_FOR,       // for文
+    TK_WHILE,     // while文
     TK_RESERVED,  // 記号
     TK_IDENT,     // 識別子
     TK_NUM,       // 整数トークン
@@ -79,6 +80,7 @@ typedef enum {
     ND_RETURN,
     ND_IF,
     ND_FOR,
+    ND_WHILE,
 } NodeKind;
 
 typedef struct Node Node;
