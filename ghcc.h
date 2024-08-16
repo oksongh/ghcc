@@ -41,7 +41,7 @@ bool is_alpha(char c);
 
 bool is_token_target(char c);
 
-bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword, int len);
+bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword);
 
 // 次のトークンが期待している記号のときはトークンを読み進めてreturn true
 // othrewise false;

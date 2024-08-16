@@ -67,15 +67,12 @@ bool is_token_target(char c) {
     return is_alpha(c) || ('0' <= c && c <= '9') || (c == '_');
 }
 
-bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword, int len) {
-    // printf("%d&", strncmp(*p, keyword, len) == 0);
-    // printf("%d\n\n", !is_token_target((*p)[len]));
+bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword) {
+    int len = strlen(keyword);
 
     if (strncmp(*p, keyword, len) == 0 && !is_token_target((*p)[len])) {
         *cur = new_token(tk, *cur, *p, len);
-        // fprintf(stderr, "^%.*s^\n", len, *p);
         *p += len;
-        // fprintf(stderr, "^%.*s^\n", len, *p);
         return true;
     }
     return false;
@@ -170,13 +167,13 @@ Token* tokenize(char* p) {
             continue;
         }
 
-        if (consume_keyword(TK_RETURN, &cur, &p, "return", 6)) continue;
+        if (consume_keyword(TK_RETURN, &cur, &p, "return")) continue;
 
-        if (consume_keyword(TK_IF, &cur, &p, "if", 2)) continue;
+        if (consume_keyword(TK_IF, &cur, &p, "if")) continue;
 
-        if (consume_keyword(TK_ELSE, &cur, &p, "else", 4)) continue;
+        if (consume_keyword(TK_ELSE, &cur, &p, "else")) continue;
 
-        if (consume_keyword(TK_FOR, &cur, &p, "for", 3)) continue;
+        if (consume_keyword(TK_FOR, &cur, &p, "for")) continue;
 
         if (is_alpha(*p)) {
             char* start = p;
