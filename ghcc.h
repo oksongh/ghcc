@@ -81,6 +81,10 @@ typedef enum {
     ND_IF,
     ND_FOR,
     ND_WHILE,
+    ND_BLOCK,  // node---
+               // ↓lhs ↓rhs
+               // null  elem|null
+    ND_ELEM,
 } NodeKind;
 
 typedef struct Node Node;

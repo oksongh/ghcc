@@ -126,6 +126,26 @@ assert 10 'i=10;while(i>0)i=i-1; return i+10;'
 assert 10 'while(1) return 10; return 4;'
 assert 10 'while(0) return 4; return 10;'
 
+echo === block statement ===
+assert 15 '{a=0; a=a+10; return a+5;}'
+assert 10 '{} return 10;'
+assert 10 'while(1){a=a*2; return 10;}'
+assert 3 '
+i = 0;
+while(1){
+    i = i+1;
+    if(i==3){
+        return i;
+    }
+}'
+
+assert 55 'a = 0;b = 0;
+for(i=0;i<10;i=i+1){
+    a=a+1;
+    b=a+b;
+}
+return b;'
+
 echo === throw compile error ===
 # assert 1 '1 + a'
 # assert 1 '1 + +'

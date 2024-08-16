@@ -91,6 +91,10 @@ char* NodeKindToString(NodeKind nk) {
             return "ND_IF";
         case ND_FOR:
             return "ND_FOR";
+        case ND_WHILE:
+            return "ND_WHILE";
+        case ND_BLOCK:
+            return "ND_BLOCK";
         default:
             error("unexpected node kind:%d", nk);
     }
@@ -107,6 +111,15 @@ void program() {
 }
 
 Node* stmt() {
+    if (consume("{")) {
+        Node* head = new_node(ND_BLOCK, NULL, NULL);
+
+        for (Node* cur = head; !consume("}"); cur = cur->rhs) {
+            cur->rhs = new_node(ND_ELEM, stmt(), NULL);
+        }
+        return head;
+    }
+
     if (consume_token(TK_RETURN)) {
         Node* node = new_node(ND_RETURN, expr(), NULL);
         expect(";");
@@ -399,6 +412,12 @@ void gen(Node* node) {
                 gen(loop);
                 call_label("    jmp .Lbegin", label_num);
                 define_label(".Lend", label_num);
+            }
+            return;
+        case ND_BLOCK:
+            for (Node* cur = node->rhs; cur && cur->lhs; cur = cur->rhs) {
+                gen(cur->lhs);
+                printf("    pop rax\n");
             }
             return;
     }
