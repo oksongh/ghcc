@@ -67,7 +67,7 @@ void debug_printf(char* fmt, ...) {
     fprintf(stderr, "\n");
 }
 
-char* NodeKindToString(NodeKind nk) {
+char* nodekind_to_str(NodeKind nk) {
     switch (nk) {
         case ND_EQU:
             return "ND_EQU";
