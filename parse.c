@@ -115,7 +115,6 @@ int expect_number() {
 }
 
 bool at_eof() {
-    // eprint_token_list(token);
     return token->kind == TK_EOF;
 }
 
@@ -197,5 +196,4 @@ Token* tokenize(char* p) {
 void parse(char* uin) {
     token = tokenize(uin);
     eprint_token_list(token);
-    // exit(0);
 }

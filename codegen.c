@@ -211,7 +211,6 @@ Node* equality() {
     }
 }
 Node* relational() {
-    // todo
     Node* node = add();
     while (true) {
         if (consume("<")) {
@@ -232,7 +231,6 @@ Node* relational() {
     }
 }
 
-// mul ('+' mul | '-' mul)*
 Node* add() {
     Node* node = mul();
 
@@ -247,7 +245,6 @@ Node* add() {
     }
 }
 
-// unary ('*' unary | '\' unary)*
 Node* mul() {
     Node* node = unary();
     while (true) {
@@ -260,7 +257,7 @@ Node* mul() {
         }
     }
 }
-// "'+'? primary
+
 Node* unary() {
     if (consume("-")) {
         return new_node(ND_SUB, new_node_num(0), primary());
