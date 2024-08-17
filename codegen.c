@@ -30,6 +30,14 @@ Node* new_node_num(int val) {
 }
 
 LVar* locals = NULL;
+LVar* new_lvar(LVar* next, char* name, int len, int offset) {
+    LVar* lvar = calloc(1, sizeof(LVar));
+    lvar->next = next;
+    lvar->name = name;
+    lvar->len = len;
+    lvar->offset = offset;
+}
+
 LVar* find_lvar(Token* tok) {
     for (LVar* var = locals; var; var = var->next) {
         if (var->len == tok->len && memcmp(var->name, tok->str, var->len) == 0) {
@@ -270,23 +278,16 @@ Node* primary() {
     Token* tok = consume_token(TK_IDENT);
 
     if (tok) {
-        Node* node = calloc(1, sizeof(Node));
-        node->kind = ND_LVAR;
+        Node* node = new_node(ND_LVAR, NULL, NULL);
         LVar* lvar = find_lvar(tok);
 
         if (lvar) {
             node->offset = lvar->offset;
         } else {
-            lvar = calloc(1, sizeof(LVar));
-            lvar->next = locals;
-
-            lvar->name = tok->str;
-            lvar->len = tok->len;
-            lvar->offset = 8 + (locals ? locals->offset : 0);
+            lvar = new_lvar(locals, tok->str, tok->len, 8 + (locals ? locals->offset : 0));
             node->offset = lvar->offset;
             locals = lvar;
         }
-
         return node;
     }
 

@@ -106,6 +106,7 @@ struct LVar {
     int len;     // 変数名の長さ
     int offset;  // RBPからのoffset
 };
+LVar* new_lvar(LVar* next, char* name, int len, int offset);
 
 Node* new_node(NodeKind kind, Node* lhs, Node* rhs);
 Node* new_node_num(int val);
