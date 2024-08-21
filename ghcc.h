@@ -85,9 +85,12 @@ typedef enum {
                // ↓lhs ↓rhs
                // null  elem|null
     ND_ELEM,
+    ND_FUNC,
 } NodeKind;
 
 typedef struct Node Node;
+typedef struct LVar LVar;
+
 struct Node {
     NodeKind kind;
     Node* lhs;
@@ -95,11 +98,10 @@ struct Node {
     Node* ths;  // third
     Node* fhs;  // fourth
 
+    LVar* lvar;
     int val;
-    int offset;
 };
 
-typedef struct LVar LVar;
 struct LVar {
     LVar* next;
     char* name;  // 変数名

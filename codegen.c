@@ -103,6 +103,8 @@ char* nodekind_to_str(NodeKind nk) {
             return "ND_WHILE";
         case ND_BLOCK:
             return "ND_BLOCK";
+        case ND_FUNC:
+            return "ND_FUNC";
         default:
             error("unexpected node kind:%d", nk);
     }
@@ -272,23 +274,29 @@ Node* primary() {
         expect(")");
         return node;
     }
-    Token* tok = consume_token(TK_IDENT);
+    Token* tok_ident = consume_token(TK_IDENT);
 
-    if (tok) {
-        Node* node = new_node(ND_LVAR, NULL, NULL);
-        LVar* lvar = find_lvar(tok);
+    if (!tok_ident) {
+        return new_node_num(expect_number());
+    }
 
-        if (lvar) {
-            node->offset = lvar->offset;
-        } else {
-            lvar = new_lvar(locals, tok->str, tok->len, 8 + (locals ? locals->offset : 0));
-            node->offset = lvar->offset;
-            locals = lvar;
-        }
+    if (consume("(")) {
+        consume(")");
+        Node* node = new_node(ND_FUNC, NULL, NULL);
+        node->lvar = new_lvar(NULL, tok_ident->str, tok_ident->len, 0);
         return node;
     }
 
-    return new_node_num(expect_number());
+    Node* node = new_node(ND_LVAR, NULL, NULL);
+    LVar* lvar = find_lvar(tok_ident);
+    if (lvar) {
+        node->lvar = lvar;
+    } else {
+        lvar = new_lvar(locals, tok_ident->str, tok_ident->len, 8 + (locals ? locals->offset : 0));
+        locals = lvar;
+        node->lvar = lvar;
+    }
+    return node;
 }
 
 void gen_lval(Node* node) {
@@ -298,7 +306,7 @@ void gen_lval(Node* node) {
     // スタック上の変数のポインタを、計算に使うためにスタックの天辺にロード
     // ポインタなので代入にも計算にも使える
     printf("    mov rax, rbp\n");
-    printf("    sub rax, %d\n", node->offset);
+    printf("    sub rax, %d\n", node->lvar->offset);
     printf("    push rax\n");
 }
 
@@ -417,6 +425,10 @@ void gen(Node* node) {
                 gen(cur->lhs);
                 printf("    pop rax\n");
             }
+            return;
+        case ND_FUNC:
+            printf("    call %.*s\n", node->lvar->len, node->lvar->name);
+            printf("    push rax\n");
             return;
     }
 

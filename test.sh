@@ -12,7 +12,7 @@ assert(){
             exit 1    
         fi
     fi
-    cc -o tmp tmp.s
+    cc -o tmp tmp.s test_func.o
     ./tmp
     actual="$?"
 
@@ -145,6 +145,9 @@ for(i=0;i<10;i=i+1){
     b=a+b;
 }
 return b;'
+
+echo === call function ===
+assert 100 'testnoarg();'
 
 echo === throw compile error ===
 # assert 1 '1 + a'
