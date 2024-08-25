@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "gh_string.h"
+
 extern char* user_input;
 void error(char* fmt, ...);
 void error_at(char* loc, char* fmt, ...);
@@ -32,8 +34,7 @@ struct Token {
     TokenKind kind;
     Token* next;
     int val;    // kind == TK_NUMのときの数値
-    char* str;  // トークン文字列
-    int len;    // トークン長
+    string* str;
 };
 
 void eprint_token_list(Token* tok);

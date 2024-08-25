@@ -38,7 +38,7 @@ void eprint_token_list(Token* tok) {
             case TK_ELSE:
             case TK_FOR:
             case TK_WHILE:
-                snprintf(str, cur->len + 1 + 2, ":%.*s:", cur->len, cur->str);
+                snprintf(str, cur->str->len + 1 + 2, ":%.*s:", cur->str->len, cur->str->chars);
                 break;
             case TK_NUM:
                 sprintf(str, ":%d:", cur->val);
@@ -51,7 +51,7 @@ void eprint_token_list(Token* tok) {
                 break;
 
             default:
-                error_at(cur->str, "print token:unexpected token type");
+                error_at(cur->str->chars, "print token:unexpected token type");
                 break;
         }
         fprintf(stderr, "%s", str);
@@ -83,7 +83,7 @@ bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword) {
 // othrewise false;
 bool consume(char* op) {
     if (token->kind != TK_RESERVED ||
-        strlen(op) != token->len || memcmp(op, token->str, token->len)) {
+        !null_terminated_cmp(op, token->str)) {
         return false;
     }
     token = token->next;
@@ -102,12 +102,12 @@ Token* consume_token(TokenKind kind) {
 
 void expect(char* op) {
     if (!consume(op)) {
-        error_at(token->str, "'%s'ではない", op);
+        error_at(token->str->chars, "'%s'ではない", op);
     }
 }
 int expect_number() {
     if (token->kind != TK_NUM) {
-        error_at(token->str, "数ではない");
+        error_at(token->str->chars, "数ではない");
     }
     int val = token->val;
     token = token->next;
@@ -119,12 +119,10 @@ bool at_eof() {
 }
 
 // link token list
-Token* new_token(TokenKind kind, Token* cur, char* str, int len) {
+Token* new_token(TokenKind kind, Token* cur, char* chars, int len) {
     Token* tok = calloc(1, sizeof(Token));
     tok->kind = kind;
-    tok->str = str;
-    tok->len = len;
-
+    tok->str = new_string(chars, len);
     cur->next = tok;
     return tok;
 }

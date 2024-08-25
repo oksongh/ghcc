@@ -40,7 +40,7 @@ LVar* new_lvar(LVar* next, char* name, int len, int offset) {
 
 LVar* find_lvar(Token* tok) {
     for (LVar* var = locals; var; var = var->next) {
-        if (var->len == tok->len && memcmp(var->name, tok->str, var->len) == 0) {
+        if (var->len == tok->str->len && memcmp(var->name, tok->str->chars, var->len) == 0) {
             return var;
         }
     }
@@ -283,7 +283,7 @@ Node* primary() {
     if (consume("(")) {
         consume(")");
         Node* node = new_node(ND_FUNC, NULL, NULL);
-        node->lvar = new_lvar(NULL, tok_ident->str, tok_ident->len, 0);
+        node->lvar = new_lvar(NULL, tok_ident->str->chars, tok_ident->str->len, 0);
         return node;
     }
 
@@ -292,7 +292,7 @@ Node* primary() {
     if (lvar) {
         node->lvar = lvar;
     } else {
-        lvar = new_lvar(locals, tok_ident->str, tok_ident->len, 8 + (locals ? locals->offset : 0));
+        lvar = new_lvar(locals, tok_ident->str->chars, tok_ident->str->len, 8 + (locals ? locals->offset : 0));
         locals = lvar;
         node->lvar = lvar;
     }
