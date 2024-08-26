@@ -50,6 +50,11 @@ LVar* find_lvar(Token* tok) {
     return NULL;
 }
 
+void lvar_to_node(LVar* lvar, Node* node) {
+    node->name = lvar->name;
+    node->offset = lvar->offset;
+}
+
 // s:null終端済み
 void define_label(char* s, int label_num) {
     printf("%s%03d", s, label_num);
@@ -286,18 +291,19 @@ Node* primary() {
     if (consume("(")) {
         consume(")");
         Node* node = new_node(ND_FUNC, NULL, NULL);
-        node->lvar = new_lvar_str(NULL, tok_ident->str, 0);
+        node->name = tok_ident->str;
         return node;
     }
 
     Node* node = new_node(ND_LVAR, NULL, NULL);
     LVar* lvar = find_lvar(tok_ident);
     if (lvar) {
-        node->lvar = lvar;
+        lvar_to_node(lvar, node);
+
     } else {
         lvar = new_lvar_str(locals, tok_ident->str, 8 + (locals ? locals->offset : 0));
         locals = lvar;
-        node->lvar = lvar;
+        lvar_to_node(lvar, node);
     }
     return node;
 }
@@ -309,7 +315,7 @@ void gen_lval(Node* node) {
     // スタック上の変数のポインタを、計算に使うためにスタックの天辺にロード
     // ポインタなので代入にも計算にも使える
     printf("    mov rax, rbp\n");
-    printf("    sub rax, %d\n", node->lvar->offset);
+    printf("    sub rax, %d\n", node->offset);
     printf("    push rax\n");
 }
 
@@ -430,7 +436,7 @@ void gen(Node* node) {
             }
             return;
         case ND_FUNC:
-            printf("    call %.*s\n", node->lvar->name->len, node->lvar->name->chars);
+            printf("    call %.*s\n", node->name->len, node->name->chars);
             printf("    push rax\n");
             return;
     }

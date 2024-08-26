@@ -33,7 +33,7 @@ typedef struct Token Token;
 struct Token {
     TokenKind kind;
     Token* next;
-    int val;    // kind == TK_NUMのときの数値
+    int val;  // kind == TK_NUMのときの数値
     string* str;
 };
 
@@ -99,7 +99,8 @@ struct Node {
     Node* ths;  // third
     Node* fhs;  // fourth
 
-    LVar* lvar;
+    string* name;  // identity name;
+    int offset;    // local variable from RBP
     int val;
 };
 
@@ -116,6 +117,7 @@ Node* new_node(NodeKind kind, Node* lhs, Node* rhs);
 Node* new_node_num(int val);
 
 LVar* find_lvar(Token* tok);
+void lvar_to_node(LVar* lvar, Node* node);
 
 void program();
 Node* stmt();
