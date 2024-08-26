@@ -30,17 +30,20 @@ Node* new_node_num(int val) {
 }
 
 LVar* locals = NULL;
-LVar* new_lvar(LVar* next, char* name, int len, int offset) {
+LVar* new_lvar_char(LVar* next, char* name, int len, int offset) {
+    return new_lvar_str(next, new_string(name, len), offset);
+}
+
+LVar* new_lvar_str(LVar* next, string* name, int offset) {
     LVar* lvar = calloc(1, sizeof(LVar));
     lvar->next = next;
     lvar->name = name;
-    lvar->len = len;
     lvar->offset = offset;
 }
 
 LVar* find_lvar(Token* tok) {
     for (LVar* var = locals; var; var = var->next) {
-        if (var->len == tok->str->len && memcmp(var->name, tok->str->chars, var->len) == 0) {
+        if (var->name->len == tok->str->len && memcmp(var->name->chars, tok->str->chars, var->name->len) == 0) {
             return var;
         }
     }
@@ -283,7 +286,7 @@ Node* primary() {
     if (consume("(")) {
         consume(")");
         Node* node = new_node(ND_FUNC, NULL, NULL);
-        node->lvar = new_lvar(NULL, tok_ident->str->chars, tok_ident->str->len, 0);
+        node->lvar = new_lvar_str(NULL, tok_ident->str, 0);
         return node;
     }
 
@@ -292,7 +295,7 @@ Node* primary() {
     if (lvar) {
         node->lvar = lvar;
     } else {
-        lvar = new_lvar(locals, tok_ident->str->chars, tok_ident->str->len, 8 + (locals ? locals->offset : 0));
+        lvar = new_lvar_str(locals, tok_ident->str, 8 + (locals ? locals->offset : 0));
         locals = lvar;
         node->lvar = lvar;
     }
@@ -427,7 +430,7 @@ void gen(Node* node) {
             }
             return;
         case ND_FUNC:
-            printf("    call %.*s\n", node->lvar->len, node->lvar->name);
+            printf("    call %.*s\n", node->lvar->name->len, node->lvar->name->chars);
             printf("    push rax\n");
             return;
     }

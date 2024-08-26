@@ -105,11 +105,12 @@ struct Node {
 
 struct LVar {
     LVar* next;
-    char* name;  // 変数名
-    int len;     // 変数名の長さ
-    int offset;  // RBPからのoffset
+    string* name;  // 変数名
+    int offset;    // RBPからのoffset
 };
-LVar* new_lvar(LVar* next, char* name, int len, int offset);
+
+LVar* new_lvar_char(LVar* next, char* name, int len, int offset);
+LVar* new_lvar_str(LVar* next, string* name, int offset);
 
 Node* new_node(NodeKind kind, Node* lhs, Node* rhs);
 Node* new_node_num(int val);
