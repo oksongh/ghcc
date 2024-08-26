@@ -12,6 +12,6 @@ typedef struct {
 
 string* new_string(char* chars, int len);
 
-bool null_terminated_cmp(char* chars, string* str);
-bool string_cmp(string* str1, string* str2);
+bool null_terminated_equals(char* chars, string* str);
+bool string_equals(string* str1, string* str2);
 #endif  // GHCC_STRING_HEADER_FILE

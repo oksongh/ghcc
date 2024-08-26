@@ -8,11 +8,11 @@ string* new_string(char* chars, int len) {
     return str;
 }
 
-bool null_terminated_cmp(char* chars, string* str) {
+bool null_terminated_equals(char* chars, string* str) {
     return (strlen(chars) == str->len) && (memcmp(chars, str->chars, str->len) == 0);
 }
 
-bool string_cmp(string* str1, string* str2) {
+bool string_equals(string* str1, string* str2) {
     return (str1->len == str2->len) &&
            (memcmp(str1->chars, str2->chars, str1->len) == 0);
 }

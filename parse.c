@@ -83,7 +83,7 @@ bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword) {
 // othrewise false;
 bool consume(char* op) {
     if (token->kind != TK_RESERVED ||
-        !null_terminated_cmp(op, token->str)) {
+        !null_terminated_equals(op, token->str)) {
         return false;
     }
     token = token->next;

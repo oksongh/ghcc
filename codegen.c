@@ -43,7 +43,7 @@ LVar* new_lvar_str(LVar* next, string* name, int offset) {
 
 LVar* find_lvar(Token* tok) {
     for (LVar* var = locals; var; var = var->next) {
-        if (var->name->len == tok->str->len && memcmp(var->name->chars, tok->str->chars, var->name->len) == 0) {
+        if (string_equals(var->name, tok->str)) {
             return var;
         }
     }
