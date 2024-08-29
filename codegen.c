@@ -462,13 +462,29 @@ void gen(Node* node) {
                     }
                 }
 
-                // 0-indexed
+                // i:1-indexed
                 for (int i = cnt; 0 < i; i--) {
                     printf("    pop %s\n", regs[i - 1]);
                 }
             }
+            // rsp mod 16 == 0
+            printf("    mov r11, rdx\n");  // 1.rdx保存 引数を渡すのにrdxを使うが、除算の結果がrdxに入るため
+            {
+                printf("    mov r10, 0x10\n");  //
+                printf("    mov rax,rsp\n");
+                printf("    cqo\n");
+                printf("    div r10\n");
+                printf("    sub rsp, rdx\n");  // rsp - (rsp % 16)
+
+                // r12:関数呼び出し前後で不変のはず。
+                // rspを16の倍数に調整した分、スタックに空の1バイトが積まれるかも
+                printf("    mov r12, rdx\n");
+            }
+            printf("    mov rdx, r11\n");  // 1.rdx取得
+            // call
             printf("    call %.*s\n", node->name->len, node->name->chars);
-            printf("    push rax\n");
+            printf("    add rsp, r12\n");  // rsp調整で積まれた空の1バイトがあるとき戻す
+            printf("    push rax\n");      // 戻り値取得
             return;
     }
 
