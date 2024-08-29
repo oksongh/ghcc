@@ -49,7 +49,7 @@ bool consume_keyword(TokenKind tk, Token** cur, char** p, char* keyword);
 // othrewise false;
 bool consume(char* op);
 
-Token* consume_token();
+Token* consume_token(TokenKind kind);
 
 void expect(char* op);
 int expect_number();
@@ -85,8 +85,10 @@ typedef enum {
     ND_BLOCK,  // node---
                // ↓lhs ↓rhs
                // null  elem|null
+    ND_FUNC,   // node---
+               // ↓lhs ↓rhs
+               // null  elem|null
     ND_ELEM,
-    ND_FUNC,
 } NodeKind;
 
 typedef struct Node Node;

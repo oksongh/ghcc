@@ -148,6 +148,11 @@ return b;'
 
 echo === call function ===
 assert 100 'testnoarg();'
+assert 15 'testIdentity(15);'
+assert 112 'testAdd(100,12);'
+assert 110 'testAdd(100, 2+8);'
+assert 10 'testAdd(testAdd(1,2),testAdd(3,4));'
+assert 6 'testWeightedSum(1,2,3,4,5,6);'
 
 echo === throw compile error ===
 # assert 1 '1 + a'

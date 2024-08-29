@@ -289,9 +289,20 @@ Node* primary() {
     }
 
     if (consume("(")) {
-        consume(")");
         Node* node = new_node(ND_FUNC, NULL, NULL);
         node->name = tok_ident->str;
+
+        // no args
+        if (consume(")")) {
+            return node;
+        }
+
+        Node* args = new_node(ND_ELEM, expr(), NULL);
+        for (Node* cur = args; !consume(")"); cur = cur->rhs) {
+            expect(",");
+            cur->rhs = new_node(ND_ELEM, expr(), NULL);
+        }
+        node->rhs = args;
         return node;
     }
 
@@ -436,6 +447,26 @@ void gen(Node* node) {
             }
             return;
         case ND_FUNC:
+
+            if (node->rhs != NULL) {
+                char* regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
+                int cnt = 0;
+                for (Node* cur = node->rhs; cur != NULL; cur = cur->rhs) {
+                    // push evaluated cur to top
+                    gen(cur->lhs);
+                    cnt++;
+
+                    if (cnt > 6) {
+                        error("too many argument:%.*s", node->name->len, node->name->chars);
+                    }
+                }
+
+                // 0-indexed
+                for (int i = cnt; 0 < i; i--) {
+                    printf("    pop %s\n", regs[i - 1]);
+                }
+            }
             printf("    call %.*s\n", node->name->len, node->name->chars);
             printf("    push rax\n");
             return;
