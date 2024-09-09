@@ -467,24 +467,27 @@ void gen(Node* node) {
                     printf("    pop %s\n", regs[i - 1]);
                 }
             }
-            // rsp mod 16 == 0
-            printf("    mov r11, rdx\n");  // 1.rdx保存 引数を渡すのにrdxを使うが、除算の結果がrdxに入るため
+            // rspを16の倍数にする
+            printf("    mov r11, rdx\n");  // rdx保存 引数を渡すのにrdxを使うが、除算の結果がrdxに入るため
+            printf("    push r12\n");      // 後で使うr12を保存
             {
-                printf("    mov r10, 0x10\n");  //
-                printf("    mov rax,rsp\n");
+                printf("    mov r10, 0x10\n");  // 16を代入
+                printf("    mov rax, rsp\n");
                 printf("    cqo\n");
                 printf("    div r10\n");
-                printf("    sub rsp, rdx\n");  // rsp - (rsp % 16)
+                printf("    sub rsp, rdx\n");  // rsp -= (rsp % 16)
 
-                // r12:関数呼び出し前後で不変のはず。
-                // rspを16の倍数に調整した分、スタックに空の1バイトが積まれるかも
+                // r12:関数呼び出し前後で不変。
+                // (rsp % 16)バイトをスタックに積んだということをr12に保存
                 printf("    mov r12, rdx\n");
             }
-            printf("    mov rdx, r11\n");  // 1.rdx取得
+            printf("    mov rdx, r11\n");  // rdx取得
             // call
-            printf("    call %.*s\n", node->name->len, node->name->chars);
-            printf("    add rsp, r12\n");  // rsp調整で積まれた空の1バイトがあるとき戻す
-            printf("    push rax\n");      // 戻り値取得
+            printf("    call %.*s\n", node->name->len, node->name->chars);  // 返り値はraxに
+            // 逆順に操作
+            printf("    add rsp, r12\n");  // rsp + (前のrsp % 16)　rsp調整で積まれた空の(rsp % 16)バイトを戻す
+            printf("    pop r12\n");       // r12を復元
+            printf("    push rax\n");      // 戻り値
             return;
     }
 
