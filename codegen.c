@@ -39,6 +39,7 @@ LVar* new_lvar_str(LVar* next, string* name, int offset) {
     lvar->next = next;
     lvar->name = name;
     lvar->offset = offset;
+    return lvar;
 }
 
 LVar* find_lvar(Token* tok) {
