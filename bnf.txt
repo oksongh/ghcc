@@ -1,4 +1,5 @@
-program    = stmt*
+program    = func+
+def_func   = ident "(" (ident ("," ident)* )? ")" "{" stmt* "}"
 stmt       = expr ";" 
            | "{" stmt* "}"
            | "return" expr ";"

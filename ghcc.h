@@ -82,12 +82,17 @@ typedef enum {
     ND_IF,
     ND_FOR,
     ND_WHILE,
-    ND_BLOCK,  // node---
-               // ↓lhs ↓rhs
-               // null  elem|null
-    ND_FUNC,   // node---
-               // ↓lhs ↓rhs
-               // null  elem|null
+    ND_BLOCK,      // node---
+                   // ↓lhs ↓rhs
+                   // null  elem|null
+    ND_CALL_FUNC,  // node---
+                   // ↓lhs ↓rhs
+                   // null  elem|null
+    ND_DEF_FUNC,   // node----------------
+                   // ↓lhs              ↓rhs
+                   // elem(idents)|null   elem(block)
+                   // ↓lhs   ↓rhs      ↓lhs   ↓rhs
+                   // concrete  elem     concrete  elem|null
     ND_ELEM,
 } NodeKind;
 
@@ -103,6 +108,8 @@ struct Node {
 
     string* name;  // identity name;
     int offset;    // local variable from RBP
+
+    LVar* locals;  // local vals owned by functioin
     int val;
 };
 
@@ -122,6 +129,7 @@ LVar* find_lvar(Token* tok);
 void lvar_to_node(LVar* lvar, Node* node);
 
 void program();
+Node* def_func();
 Node* stmt();
 Node* expr();
 Node* assign();

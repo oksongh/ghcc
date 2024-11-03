@@ -112,8 +112,10 @@ char* nodekind_to_str(NodeKind nk) {
             return "ND_WHILE";
         case ND_BLOCK:
             return "ND_BLOCK";
-        case ND_FUNC:
-            return "ND_FUNC";
+        case ND_CALL_FUNC:
+            return "ND_CALL_FUNC";
+        case ND_DEF_FUNC:
+            return "ND_DEF_FUNC";
         default:
             error("unexpected node kind:%d", nk);
     }
@@ -122,11 +124,66 @@ char* nodekind_to_str(NodeKind nk) {
 Node* code[100];
 
 void program() {
-    size_t i = 0;
+    code[0] = def_func();
+
+    size_t i = 1;
     for (; !at_eof(); i++) {
-        code[i] = stmt();
+        code[i] = def_func();
     }
     code[i] = NULL;
+}
+Node* def_func() {
+    // local変数初期化
+    locals = NULL;
+
+    Node* node = new_node(ND_DEF_FUNC, NULL, NULL);
+    Token* func_name = consume_token(TK_IDENT);
+    if (!func_name) {
+        error("def func: not found indentifier");
+    }
+    node->name = func_name->str;
+    expect("(");
+
+    // 引数あり
+    if (!consume(")")) {
+        Node* args = new_node(ND_ELEM, NULL, NULL);
+        node->lhs = args;
+
+        // 最初の引数
+        args->lhs = new_node(ND_LVAR, NULL, NULL);
+        Token* tok_ident = consume_token(TK_IDENT);
+        LVar* lvar = new_lvar_str(locals, tok_ident->str, 8);
+        locals = lvar;
+
+        lvar_to_node(lvar, args->lhs);
+
+        for (Node* cur = args; !consume(")"); cur = cur->rhs) {
+            expect(",");
+
+            Token* tok_ident_ = consume_token(TK_IDENT);
+            if (find_lvar(tok_ident_)) {
+                error("redefined argument");
+            }
+            LVar* lvar_ = new_lvar_str(locals, tok_ident_->str, 8 + locals->offset);
+            locals = lvar_;
+
+            Node* argi = new_node(ND_LVAR, NULL, NULL);
+            lvar_to_node(lvar_, argi);
+            cur->rhs = new_node(ND_ELEM, argi, NULL);
+        }
+    }
+    // block
+    expect("{");
+
+    Node* block = new_node(ND_BLOCK, NULL, NULL);
+    node->rhs = block;
+
+    for (Node* cur = block; !consume("}"); cur = cur->rhs) {
+        cur->rhs = new_node(ND_ELEM, stmt(), NULL);
+    }
+
+    node->locals = locals;
+    return node;
 }
 
 Node* stmt() {
@@ -285,12 +342,14 @@ Node* primary() {
     }
     Token* tok_ident = consume_token(TK_IDENT);
 
+    // number
     if (!tok_ident) {
         return new_node_num(expect_number());
     }
 
+    // call func
     if (consume("(")) {
-        Node* node = new_node(ND_FUNC, NULL, NULL);
+        Node* node = new_node(ND_CALL_FUNC, NULL, NULL);
         node->name = tok_ident->str;
 
         // no args
@@ -306,7 +365,7 @@ Node* primary() {
         node->rhs = args;
         return node;
     }
-
+    // local variable
     Node* node = new_node(ND_LVAR, NULL, NULL);
     LVar* lvar = find_lvar(tok_ident);
     if (lvar) {
@@ -320,6 +379,7 @@ Node* primary() {
     return node;
 }
 
+// 変数呼び出し時
 void gen_lval(Node* node) {
     if (node->kind != ND_LVAR) {
         error("not left value");
@@ -333,6 +393,7 @@ void gen_lval(Node* node) {
 
 static int jmp_label = 0;
 void gen(Node* node) {
+    // printf("# gen %s\n", nodekind_to_str(node->kind));
     int label_num = jmp_label++;
 
     switch (node->kind) {
@@ -406,6 +467,7 @@ void gen(Node* node) {
                 if (cond) {
                     gen(cond);
                     // pop, compare, 0ならgoto end;
+                    printf("    pop rax\n");
                     printf("    cmp rax, 0\n");
                     call_label("    je .Lend", label_num);
                 }
@@ -444,10 +506,9 @@ void gen(Node* node) {
         case ND_BLOCK:
             for (Node* cur = node->rhs; cur && cur->lhs; cur = cur->rhs) {
                 gen(cur->lhs);
-                printf("    pop rax\n");
             }
             return;
-        case ND_FUNC:
+        case ND_CALL_FUNC:
 
             if (node->rhs != NULL) {
                 char* regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
@@ -478,6 +539,56 @@ void gen(Node* node) {
             printf("    mov rsp, r12\n");
             printf("    pop r12\n");   // r12を復元
             printf("    push rax\n");  // 戻り値
+            return;
+        case ND_DEF_FUNC:
+            //
+            {
+                string* name = node->name;
+                Node* args = node->lhs;
+                Node* block = node->rhs;
+
+                int variables_size = 0;
+                for (Node* cur = args; cur; cur = cur->rhs) {
+                    variables_size++;
+                }
+                for (LVar* cur = node->locals; cur; cur = cur->next) {
+                    variables_size++;
+                }
+
+                printf("# define %.*s\n", name->len, name->chars);
+
+                printf("%.*s:\n", name->len, name->chars);
+                // prologue
+                printf("    push rbp\n");
+                printf("    mov rbp, rsp\n");
+                // 引数と変数用の領域確保
+                printf("    sub rsp, %d\n", variables_size * 8);
+
+                // 引数代入
+                if (args) {
+                    char* regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+                    int i = 0;
+                    for (Node* cur = args; cur; cur = cur->rhs) {
+                        printf("    mov rax, rbp\n");
+                        printf("    sub rax, %d\n", cur->lhs->offset);
+                        printf("    mov [rax], %s\n", regs[i]);
+                        i++;
+                    }
+                }
+
+                printf("# end prologue\n");
+                // statementsを生成
+                for (Node* cur = block->rhs; cur; cur = cur->rhs) {
+                    gen(cur->lhs);
+
+                    // 計算した値がスタックに残っているためpopでリセット
+                    printf("    pop rax\n");
+                }
+                // epilogue
+                printf("    mov rsp, rbp\n");
+                printf("    pop rbp\n");
+                printf("    ret\n");
+            }
             return;
     }
 
@@ -533,22 +644,8 @@ void generate() {
 
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
-    printf("main:\n");
-
-    // プロローグ
-    // 変数26個分の領域確保
-    printf("    push rbp\n");
-    printf("    mov rbp, rsp\n");
-    printf("    sub rsp, %d\n", 26 * 8);
 
     for (size_t i = 0; code[i]; i++) {
         gen(code[i]);
-
-        // 計算した値が残っているためpop
-        printf("    pop rax\n");
     }
-
-    printf("    mov rsp, rbp\n");
-    printf("    pop rbp\n");
-    printf("    ret\n");
 }
